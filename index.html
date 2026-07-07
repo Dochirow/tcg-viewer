@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="fr">
-<!-- TCG-Studio classeur partagé · v2026-07-07d · hébergé sur GitHub Pages
+<!-- TCG-Studio classeur partagé · v2026-07-07e · hébergé sur GitHub Pages
      (Supabase Storage ET Edge Functions neutralisent le HTML → text/plain).
      La page appelle Supabase en RPC (CORS *) : marche depuis n'importe quel domaine. -->
 <head>
@@ -98,6 +98,16 @@
     setTimeout(() => el.classList.remove("show"), 2200);
   }
   function esc(s){ return (s||"").replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+  // Les images One Piece officielles envoient « Cross-Origin-Resource-Policy:
+  // same-site » → le navigateur refuse de les afficher hors de leur domaine
+  // (image vide sur cette page). On les passe par un proxy image (wsrv.nl) qui
+  // les re-sert en cross-origin. Les autres sources (TCGdex, Riftbound…) sont OK.
+  function proxImg(u){
+    if (!u) return u || "";
+    return /onepiece-cardgame\.com/.test(u)
+      ? "https://wsrv.nl/?url=" + encodeURIComponent(u)
+      : u;
+  }
 
   async function charger() {
     if (!code) { content.textContent = "Lien invalide (code manquant)."; return; }
@@ -129,8 +139,8 @@
     let cells = "";
     for (const c of slice) {
       const dispo = c.statut === "dispo";
-      const img = c.photo_url || c.image_url || "";
-      const imgHd = c.photo_url || (c.image_url || "").replace(/\/low\.(webp|png|jpg)/, "/high.$1");
+      const img = c.photo_url || proxImg(c.image_url) || "";
+      const imgHd = c.photo_url || proxImg((c.image_url || "").replace(/\/low\.(webp|png|jpg)/, "/high.$1"));
       const etat = (c.etat && c.etat.trim()) ? esc(c.etat) : "À voir sur place";
       const prix = (BINDER.show_prices && c.prix != null) ? `<span class="prix">${(+c.prix).toFixed(2)} €</span>` : "";
       const qte = (c.quantite && c.quantite > 1) ? `<span class="qte">×${c.quantite}</span>` : "";
